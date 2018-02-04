@@ -55,7 +55,7 @@
 				}]
 			}
 		},
-		"VPCSubnetAZ1Admin": {
+		"VPCSubnetAZ1AdminPublic": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"CidrBlock": "10.0.8.0/21",
@@ -69,14 +69,14 @@
 					"Value": {
 						"Fn::Join": ["-", [
 								{"Ref": "HACMSName"},
-								"vpc-subnet-az1-admin"
+								"vpc-subnet-az1-admin-public"
 							]
 						]
 					}
 				}]
 			}
         },
-		"VPCSubnetAZ2Admin": {
+		"VPCSubnetAZ2AdminPublic": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"CidrBlock": "10.0.16.0/21",
@@ -90,14 +90,14 @@
 					"Value": {
 						"Fn::Join": ["-", [
 								{"Ref": "HACMSName"},
-								"vpc-subnet-az2-admin"
+								"vpc-subnet-az2-admin-public"
 							]
 						]
 					}
 				}]
 			}
         },
-		"VPCSubnetAZ3Admin": {
+		"VPCSubnetAZ3AdminPublic": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"CidrBlock": "10.0.24.0/21",
@@ -111,14 +111,14 @@
 					"Value": {
 						"Fn::Join": ["-", [
 								{"Ref": "HACMSName"},
-								"vpc-subnet-az3-admin"
+								"vpc-subnet-az3-admin-public"
 							]
 						]
 					}
 				}]
 			}
         },
-		"VPCIGW": {
+		"VPCIGWPublic": {
 			"Type" : "AWS::EC2::InternetGateway",
 			"Properties" : {
 				"Tags" : [{
@@ -126,7 +126,7 @@
 					"Value": {
 						"Fn::Join": ["-", [
 								{"Ref": "HACMSName"},
-								"vpc-igw"
+								"vpc-igw-public"
 							]
 						]
 					}
@@ -134,12 +134,12 @@
 			},
 			"DependsOn": [
 				"VPC",
-				"VPCSubnetAZ1Admin",
-				"VPCSubnetAZ2Admin",
-				"VPCSubnetAZ3Admin"
+				"VPCSubnetAZ1AdminPublic",
+				"VPCSubnetAZ2AdminPublic",
+				"VPCSubnetAZ3AdminPublic"
 			]
 		},
-		"VPCRouteTBLAdmin": {
+		"VPCRouteTBLAdminPublic": {
 			"Type" : "AWS::EC2::RouteTable",
 			"Properties" : {
 				"VpcId" : {
@@ -150,90 +150,266 @@
 					"Value": {
 						"Fn::Join": ["-", [
 								{"Ref": "HACMSName"},
-								"vpc-routetbl-admin"
+								"vpc-routetbl-admin-public"
 							]
 						]
 					}
 				}]
 			},
 			"DependsOn": [
-				"VPCIGW"
+				"VPCIGWPublic"
 			]
 		},
-		"VPCIGWAttach": {
+		"VPCIGWPublicAttach": {
 			"Type" : "AWS::EC2::VPCGatewayAttachment",
 			"Properties" : {
 				"InternetGatewayId" : {
-					"Ref": "VPCIGW"
+					"Ref": "VPCIGWPublic"
 				},
 				"VpcId" : {
 					"Ref": "VPC"
 				}
 			},
 			"DependsOn": [
-				"VPCIGW"
+				"VPCIGWPublic"
 			]
 		},
-		"VPCRouteTBLAdminAssocSN1": {
+		"VPCRouteTBLAdminPublicAssocSN1": {
 			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties" : {
 				"RouteTableId" : {
-					"Ref": "VPCRouteTBLAdmin"
+					"Ref": "VPCRouteTBLAdminPublic"
 				},
 				"SubnetId" : {
-					"Ref": "VPCSubnetAZ1Admin"
+					"Ref": "VPCSubnetAZ1AdminPublic"
 				}
 			},
 			"DependsOn": [
-				"VPCRouteTBLAdmin"
+				"VPCRouteTBLAdminPublic"
 			]
 		},
-		"VPCRouteTBLAdminAssocSN2": {
+		"VPCRouteTBLAdminPublicAssocSN2": {
 			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties" : {
 				"RouteTableId" : {
-					"Ref": "VPCRouteTBLAdmin"
+					"Ref": "VPCRouteTBLAdminPublic"
 				},
 				"SubnetId" : {
-					"Ref": "VPCSubnetAZ2Admin"
+					"Ref": "VPCSubnetAZ2AdminPublic"
 				}
 			},
 			"DependsOn": [
-				"VPCRouteTBLAdmin"
+				"VPCRouteTBLAdminPublic"
 			]
 		},
-		"VPCRouteTBLAdminAssocSN3": {
+		"VPCRouteTBLAdminPublicAssocSN3": {
 			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties" : {
 				"RouteTableId" : {
-					"Ref": "VPCRouteTBLAdmin"
+					"Ref": "VPCRouteTBLAdminPublic"
 				},
 				"SubnetId" : {
-					"Ref": "VPCSubnetAZ3Admin"
+					"Ref": "VPCSubnetAZ3AdminPublic"
 				}
 			},
 			"DependsOn": [
-				"VPCRouteTBLAdmin"
+				"VPCRouteTBLAdminPublic"
 			]
 		},
-		"VPCRouteTBLAdminCFGIGW": {
+		"VPCRouteTBLAdminPublicCFGIGW": {
 			"Type" : "AWS::EC2::Route",
 			"Properties" : {
 				"DestinationCidrBlock" : "0.0.0.0/0",
 				"GatewayId" : {
-					"Ref": "VPCIGW"
+					"Ref": "VPCIGWPublic"
 				},
 				"RouteTableId" : {
-					"Ref": "VPCRouteTBLAdmin"
+					"Ref": "VPCRouteTBLAdminPublic"
 				}
 			},
 			"DependsOn": [
-				"VPCRouteTBLAdminAssocSN1",
-				"VPCRouteTBLAdminAssocSN2",
-				"VPCRouteTBLAdminAssocSN3",
-				"VPCIGWAttach"
+				"VPCRouteTBLAdminPublicAssocSN1",
+				"VPCRouteTBLAdminPublicAssocSN2",
+				"VPCRouteTBLAdminPublicAssocSN3",
+				"VPCIGWPublicAttach"
 			]
 		},
+		"VPCSubnetAZ1AdminPrivate": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"CidrBlock": "10.0.32.0/21",
+				"AvailabilityZone": "ap-southeast-2a",
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc-subnet-az1-admin-private"
+							]
+						]
+					}
+				}]
+			}
+        },
+		"VPCSubnetAZ2AdminPrivate": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"CidrBlock": "10.0.40.0/21",
+				"AvailabilityZone": "ap-southeast-2b",
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc-subnet-az2-admin-private"
+							]
+						]
+					}
+				}]
+			}
+        },
+		"VPCSubnetAZ3AdminPrivate": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"CidrBlock": "10.0.48.0/21",
+				"AvailabilityZone": "ap-southeast-2c",
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc-subnet-az3-admin-private"
+							]
+						]
+					}
+				}]
+			}
+        },
+		"VPCNATAZ1PrivateEIP": {
+			"Type" : "AWS::EC2::EIP",
+			"Properties" : {}
+		},
+		"VPCNATAZ1Private": {
+			"Type" : "AWS::EC2::NatGateway",
+				"Properties" : {
+				"AllocationId" : {
+					"Fn::GetAtt": [
+						"VPCNATAZ1PrivateEIP",
+						"AllocationId"
+					]
+				},
+				"SubnetId" : {
+					"Ref": "VPCSubnetAZ1AdminPublic"
+				},
+				"Tags" : [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc-nat-az1-private"
+							]
+						]
+					}
+				}]
+			},
+			"DependsOn": [
+				"VPCNATAZ1PrivateEIP"
+			]
+		},
+		"VPCRouteTBLAdminPrivate": {
+			"Type" : "AWS::EC2::RouteTable",
+			"Properties" : {
+				"VpcId" : {
+					"Ref": "VPC"
+				},
+				"Tags" : [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc-routetbl-admin-private"
+							]
+						]
+					}
+				}]
+			},
+			"DependsOn": [
+				"VPCNATAZ1Private"
+			]
+		},
+		"VPCRouteTBLAdminPrivateAssocSN1": {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties" : {
+				"RouteTableId" : {
+					"Ref": "VPCRouteTBLAdminPrivate"
+				},
+				"SubnetId" : {
+					"Ref": "VPCSubnetAZ1AdminPrivate"
+				}
+			},
+			"DependsOn": [
+				"VPCRouteTBLAdminPrivate"
+			]
+		},
+		"VPCRouteTBLAdminPrivateAssocSN2": {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties" : {
+				"RouteTableId" : {
+					"Ref": "VPCRouteTBLAdminPrivate"
+				},
+				"SubnetId" : {
+					"Ref": "VPCSubnetAZ2AdminPrivate"
+				}
+			},
+			"DependsOn": [
+				"VPCRouteTBLAdminPrivate"
+			]
+		},
+		"VPCRouteTBLAdminPrivateAssocSN3": {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties" : {
+				"RouteTableId" : {
+					"Ref": "VPCRouteTBLAdminPrivate"
+				},
+				"SubnetId" : {
+					"Ref": "VPCSubnetAZ3AdminPrivate"
+				}
+			},
+			"DependsOn": [
+				"VPCRouteTBLAdminPrivate"
+			]
+		},
+		"MyWordpressSiteVPCRouteTBLWebPrivateCFGNAT": {
+			"Type" : "AWS::EC2::Route",
+			"Properties" : {
+				"DestinationCidrBlock" : "0.0.0.0/0",
+				"NatGatewayId" : {
+					"Ref": "VPCNATAZ1Private"
+				},
+				"RouteTableId" : {
+					"Ref": "VPCRouteTBLAdminPrivate"
+				}
+			},
+			"DependsOn": [
+				"VPCRouteTBLAdminPrivateAssocSN1",
+				"VPCRouteTBLAdminPrivateAssocSN2",
+				"VPCRouteTBLAdminPrivateAssocSN3",
+				"VPCRouteTBLAdminPrivate"
+			]
+		},
+		
+		
+		
+		
 		
 		
 		"LGSysWebStack": {
@@ -342,7 +518,7 @@
 					}
 				],
 				"SubnetId": {
-					"Ref": "VPCSubnetAZ1Admin"
+					"Ref": "VPCSubnetAZ1AdminPublic"
 				},
 				"Tags": [{
 					"Key": "Name",
@@ -572,11 +748,12 @@
 					"Ref": "SGAdminStackEFS"
 				}],
 				"SubnetId" : {
-					"Ref": "VPCSubnetAZ1Admin"
+					"Ref": "VPCSubnetAZ1AdminPrivate"
 				}
 			},
 			"DependsOn": [
-				"EFSAdminStack"
+				"EFSAdminStack",
+				"VPCSubnetAZ1AdminPrivate"
 			]
 		},
 		"EFMAZ2AdminStack" : {
@@ -589,11 +766,12 @@
 					"Ref": "SGAdminStackEFS"
 				}],
 				"SubnetId" : {
-					"Ref": "VPCSubnetAZ2Admin"
+					"Ref": "VPCSubnetAZ2AdminPrivate"
 				}
 			},
 			"DependsOn": [
-				"EFSAdminStack"
+				"EFSAdminStack",
+				"VPCSubnetAZ2AdminPrivate"
 			]
 		},
 		"EFMAZ3AdminStack" : {
@@ -606,11 +784,12 @@
 					"Ref": "SGAdminStackEFS"
 				}],
 				"SubnetId" : {
-					"Ref": "VPCSubnetAZ3Admin"
+					"Ref": "VPCSubnetAZ3AdminPrivate"
 				}
 			},
 			"DependsOn": [
-				"EFSAdminStack"
+				"EFSAdminStack",
+				"VPCSubnetAZ3AdminPrivate"
 			]
 		},
 		"LCAdminStack": {
@@ -670,9 +849,9 @@
 					"Ref": "SGAdminStackALB"
 				}],
 				"Subnets" : [
-					{"Ref": "VPCSubnetAZ1Admin"},
-					{"Ref": "VPCSubnetAZ2Admin"},
-					{"Ref": "VPCSubnetAZ3Admin"}
+					{"Ref": "VPCSubnetAZ1AdminPublic"},
+					{"Ref": "VPCSubnetAZ2AdminPublic"},
+					{"Ref": "VPCSubnetAZ3AdminPublic"}
 				],
 				"Tags" : [{
 					"Key": "Name",
@@ -689,7 +868,7 @@
 			},
 			"DependsOn": [
 				"SGAdminStackALB",
-				"VPCIGWAttach"
+				"VPCIGWPublicAttach"
 			]
 		},
 		"TGAdminStack": {
@@ -765,7 +944,7 @@
 				}],
 				"Cooldown" : "300",
 				"HealthCheckGracePeriod" : "300",
-				"HealthCheckType" : "ELB",
+				"HealthCheckType" : "EC2",
 				"LaunchConfigurationName" : {
 					"Ref": "LCAdminStack"
 				},
@@ -775,15 +954,15 @@
 					"Ref": "TGAdminStack"
 				}],
 				"VPCZoneIdentifier" : [
-					{"Ref": "VPCSubnetAZ1Admin"},
-					{"Ref": "VPCSubnetAZ2Admin"},
-					{"Ref": "VPCSubnetAZ3Admin"}
+					{"Ref": "VPCSubnetAZ1AdminPrivate"},
+					{"Ref": "VPCSubnetAZ2AdminPrivate"},
+					{"Ref": "VPCSubnetAZ3AdminPrivate"}
 				]
 			},
 			"DependsOn" : [
 				"LCAdminStack",
 				"ListenerAdminStack",
-				"VPCIGWAttach"
+				"VPCNATAZ1Private"
 			]
 		},
 		"CWWebStackASCPU": {
@@ -838,46 +1017,91 @@
 				}
 			}
 		},
-		"VPCSubnetAZ1Admin": {
-			"Description": "Admin Subnet in AZ 1",
+		"VPCSubnetAZ1AdminPublic": {
+			"Description": "Public Admin Subnet in AZ 1",
 			"Value": {
-				"Ref": "VPCSubnetAZ1Admin"
+				"Ref": "VPCSubnetAZ1AdminPublic"
 			},
 			"Export": {
 				"Name": {
 					"Fn::Join": ["-", [
 							{"Ref": "HACMSName"},
-							"vpc-subnet-az1-admin"
+							"vpc-subnet-az1-admin-public"
 						]
 					]
 				}
 			}
 		},
-		"VPCSubnetAZ2Admin": {
-			"Description": "Admin Subnet in AZ 2",
+		"VPCSubnetAZ2AdminPublic": {
+			"Description": "Public Admin Subnet in AZ 2",
 			"Value": {
-				"Ref": "VPCSubnetAZ2Admin"
+				"Ref": "VPCSubnetAZ2AdminPublic"
 			},
 			"Export": {
 				"Name": {
 					"Fn::Join": ["-", [
 							{"Ref": "HACMSName"},
-							"vpc-subnet-az2-admin"
+							"vpc-subnet-az2-admin-public"
 						]
 					]
 				}
 			}
 		},
 		"VPCSubnetAZ3Admin": {
-			"Description": "Admin Subnet in AZ 3",
+			"Description": "Public Admin Subnet in AZ 3",
 			"Value": {
-				"Ref": "VPCSubnetAZ3Admin"
+				"Ref": "VPCSubnetAZ3AdminPublic"
 			},
 			"Export": {
 				"Name": {
 					"Fn::Join": ["-", [
 							{"Ref": "HACMSName"},
-							"vpc-subnet-az3-admin"
+							"vpc-subnet-az3-admin-public"
+						]
+					]
+				}
+			}
+		},
+		"VPCSubnetAZ1AdminPrivate": {
+			"Description": "Private Admin Subnet in AZ 1",
+			"Value": {
+				"Ref": "VPCSubnetAZ1AdminPrivate"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"vpc-subnet-az1-admin-private"
+						]
+					]
+				}
+			}
+		},
+		"VPCSubnetAZ2AdminPrivate": {
+			"Description": "Private Admin Subnet in AZ 2",
+			"Value": {
+				"Ref": "VPCSubnetAZ2AdminPrivate"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"vpc-subnet-az2-admin-private"
+						]
+					]
+				}
+			}
+		},
+		"VPCSubnetAZ3Admin": {
+			"Description": "Private Admin Subnet in AZ 3",
+			"Value": {
+				"Ref": "VPCSubnetAZ3AdminPrivate"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"vpc-subnet-az3-admin-private"
 						]
 					]
 				}
