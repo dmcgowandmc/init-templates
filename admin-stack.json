@@ -1,0 +1,887 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+
+	"Parameters": {
+		"HACMSName": {
+			"Type": "String",
+			"Default": "hacms",
+			"Description": "Give a unique name to identify ha-cms. This will form the base naming standard for all other components under ha-cms and will help you identify those resources from other resources"
+		},
+		"BaseUtilityIP": {
+			"Type": "String",
+			"Default": "0.0.0.0/0",
+			"Description": "Please provide the range of external IP addresses permitted to the utility box via ssh. Default is 0.0.0.0/0 but strongly recommended this be changed"
+		},
+		"BaseAdminExtIP": {
+			"Type": "String",
+			"Default": "0.0.0.0/0",
+			"Description": "Please provide the range of external IP addresses permitted to the admin server. Default is 0.0.0.0/0 but strongly recommended this be changed"
+		},
+		"BaseAMI": {
+			"Type": "AWS::EC2::Image::Id",
+			"Description": "For advanced users only. Please leave as is unless you know what you are doing",
+			"Default": "ami-0c34246f"
+		},
+		"Role": {
+			"Type": "String",
+			"Description": "You need to create a temporary admin role. This will role will be removed upon completion of the application configuration with something more secure. See README.md for more information"
+		},
+		"KeyPair": {
+			"Type": "AWS::EC2::KeyPair::KeyName",
+			"Description": "You need to create a keypair for external access to the utility box. See README.md for more information"
+		},
+		"InfraAlertEmail": {
+			"Type": "String",
+			"Description": "Please provide an valid email address for infrastructure alerts. This will be used for all monitoring alerts"
+		}
+	},
+	
+	"Resources": {
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+				"CidrBlock": "10.0.0.0/16",
+				"EnableDnsSupport": true,
+				"EnableDnsHostnames": true,
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc"
+							]
+						]
+					}
+				}]
+			}
+		},
+		"VPCSubnetAZ1Admin": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"CidrBlock": "10.0.8.0/21",
+				"AvailabilityZone": "ap-southeast-2a",
+				"MapPublicIpOnLaunch": "true",
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc-subnet-az1-admin"
+							]
+						]
+					}
+				}]
+			}
+        },
+		"VPCSubnetAZ2Admin": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"CidrBlock": "10.0.16.0/21",
+				"AvailabilityZone": "ap-southeast-2b",
+				"MapPublicIpOnLaunch": "true",
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc-subnet-az2-admin"
+							]
+						]
+					}
+				}]
+			}
+        },
+		"VPCSubnetAZ3Admin": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"CidrBlock": "10.0.24.0/21",
+				"AvailabilityZone": "ap-southeast-2c",
+				"MapPublicIpOnLaunch": "true",
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc-subnet-az3-admin"
+							]
+						]
+					}
+				}]
+			}
+        },
+		"VPCIGW": {
+			"Type" : "AWS::EC2::InternetGateway",
+			"Properties" : {
+				"Tags" : [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc-igw"
+							]
+						]
+					}
+				}]
+			},
+			"DependsOn": [
+				"VPC",
+				"VPCSubnetAZ1Admin",
+				"VPCSubnetAZ2Admin",
+				"VPCSubnetAZ3Admin"
+			]
+		},
+		"VPCRouteTBLAdmin": {
+			"Type" : "AWS::EC2::RouteTable",
+			"Properties" : {
+				"VpcId" : {
+					"Ref": "VPC"
+				},
+				"Tags" : [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"vpc-routetbl-admin"
+							]
+						]
+					}
+				}]
+			},
+			"DependsOn": [
+				"VPCIGW"
+			]
+		},
+		"VPCIGWAttach": {
+			"Type" : "AWS::EC2::VPCGatewayAttachment",
+			"Properties" : {
+				"InternetGatewayId" : {
+					"Ref": "VPCIGW"
+				},
+				"VpcId" : {
+					"Ref": "VPC"
+				}
+			},
+			"DependsOn": [
+				"VPCIGW"
+			]
+		},
+		"VPCRouteTBLAdminAssocSN1": {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties" : {
+				"RouteTableId" : {
+					"Ref": "VPCRouteTBLAdmin"
+				},
+				"SubnetId" : {
+					"Ref": "VPCSubnetAZ1Admin"
+				}
+			},
+			"DependsOn": [
+				"VPCRouteTBLAdmin"
+			]
+		},
+		"VPCRouteTBLAdminAssocSN2": {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties" : {
+				"RouteTableId" : {
+					"Ref": "VPCRouteTBLAdmin"
+				},
+				"SubnetId" : {
+					"Ref": "VPCSubnetAZ2Admin"
+				}
+			},
+			"DependsOn": [
+				"VPCRouteTBLAdmin"
+			]
+		},
+		"VPCRouteTBLAdminAssocSN3": {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties" : {
+				"RouteTableId" : {
+					"Ref": "VPCRouteTBLAdmin"
+				},
+				"SubnetId" : {
+					"Ref": "VPCSubnetAZ3Admin"
+				}
+			},
+			"DependsOn": [
+				"VPCRouteTBLAdmin"
+			]
+		},
+		"VPCRouteTBLAdminCFGIGW": {
+			"Type" : "AWS::EC2::Route",
+			"Properties" : {
+				"DestinationCidrBlock" : "0.0.0.0/0",
+				"GatewayId" : {
+					"Ref": "VPCIGW"
+				},
+				"RouteTableId" : {
+					"Ref": "VPCRouteTBLAdmin"
+				}
+			},
+			"DependsOn": [
+				"VPCRouteTBLAdminAssocSN1",
+				"VPCRouteTBLAdminAssocSN2",
+				"VPCRouteTBLAdminAssocSN3",
+				"VPCIGWAttach"
+			]
+		},
+		
+		
+		"LGSysWebStack": {
+			"Type" : "AWS::Logs::LogGroup",
+			"Properties" : {
+				"LogGroupName" : "/var/log/syslog",
+				"RetentionInDays" : "30"
+			}
+		},
+		"SGUtility": {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"GroupDescription" : "Admin security group for SSH access from local client. ICMP protocols NOT permitted",
+				"VpcId" : {
+					"Ref": "VPC"
+				},
+				"SecurityGroupIngress" : [
+					{
+						"IpProtocol" : "tcp",
+						"FromPort" : "22",
+						"ToPort" : "22",
+						"CidrIp" : {
+							"Ref": "BaseUtilityIP"
+						}
+					}
+				],
+				"Tags" : [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"sg-utility"
+							]
+						]
+					}
+				}]
+			}
+		},
+		"SNSTopicInfraAlert": {
+			"Type" : "AWS::SNS::Topic",
+			"Properties" : {
+				"DisplayName" : {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"sns-infra-alert"
+						]
+					]
+				},
+				"TopicName" : {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"sns-infra-alert"
+						]
+					]
+				}
+			}
+		},
+		"SNSTopicInfraAlertSubscripe": {
+			"Type" : "AWS::SNS::Subscription",
+			"Properties" : {
+				"Endpoint": {
+					"Ref": "InfraAlertEmail"
+				},
+				"Protocol": "Email",
+				"TopicArn": {
+					"Ref": "SNSTopicInfraAlert"
+				}
+			},
+			"DependsOn": [
+				"SNSTopicInfraAlert"
+			]
+		},
+		"EC2UtilityAZ1": {
+			"Type" : "AWS::EC2::Instance",
+			"Properties" : {
+				"AvailabilityZone" : {
+					"Ref" : "AWS::Region"
+				},
+				"AvailabilityZone" : {
+					"Fn::Join": ["", [
+							{"Ref" : "AWS::Region"},
+							"a"
+						]
+					]
+				},
+				"BlockDeviceMappings" : [{
+					"DeviceName": "xvda",
+					"Ebs": {
+						"VolumeType": "gp2",
+						"VolumeSize": "20"
+					}
+				}],
+				"ImageId" : {
+					"Ref": "BaseAMI"
+				},
+				"InstanceType" : "t2.micro",
+				"IamInstanceProfile": {
+					"Ref": "Role"
+				},
+				"KeyName" : {
+					"Ref": "KeyPair"
+				},
+				"SecurityGroupIds": [
+					{
+						"Ref":"SGUtility"
+					}
+				],
+				"SubnetId": {
+					"Ref": "VPCSubnetAZ1Admin"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"ec2-utility-az1"
+							]
+						]
+					}
+				}],
+				"UserData": {
+					"Fn::Base64": {
+						"Fn::Join": ["\n", 
+							[
+								"#!/bin/bash",
+								"apt-get update",
+								"apt-get upgrade -y",
+								"apt-get install -y ansible"
+							]
+						]
+					}
+				}
+			},
+			"DependsOn": [
+				"SGUtility"
+			]
+		},
+		"EC2UtilityAZ1EIP": {
+			"Type" : "AWS::EC2::EIP",
+			"Properties" : {
+				"InstanceId" : {
+					"Ref":"EC2UtilityAZ1"
+				}
+			},
+			"DependsOn": [
+				"EC2UtilityAZ1"
+			]
+		},
+		"CWUtilityAZ1CPU": {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Properties" : {
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [{
+					"Ref": "SNSTopicInfraAlert"
+				}],
+				"AlarmDescription" : "Notify when CPU has breached 50% over for more than 5 minutes",
+				"AlarmName" : {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"cw-utility-az1-cpu"
+						]
+					]
+				},
+				"ComparisonOperator" : "GreaterThanOrEqualToThreshold",
+				"EvaluationPeriods" : "1",
+				"MetricName" : "CPUUtilization",
+				"Namespace" : "AWS/EC2",
+				"Period" : "300",
+				"Statistic" : "Average",
+				"Threshold" : "50",
+				"Dimensions" : [{
+					"Name": "InstanceId",
+					"Value": {
+						"Ref":"EC2UtilityAZ1"
+					}
+				}]
+			},
+			"DependsOn":[
+				"SNSTopicInfraAlertSubscripe",
+				"EC2UtilityAZ1"
+			]
+		},
+		
+		
+		"SGAdminStackALB" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"GroupDescription" : "Standard Security group for AdminStack Application Load Balancer. Permit 443 and 80 from 0.0.0.0, Permit ICMP from 10.0.0.0",
+				"VpcId" : {
+					"Ref": "VPC"
+				},
+				"SecurityGroupIngress" : [
+					{
+						"IpProtocol" : "icmp",
+						"FromPort" : "-1",
+						"ToPort" : "-1",
+						"CidrIp" : "10.0.0.0/16"
+					},
+					{
+						"IpProtocol" : "tcp",
+						"FromPort" : "443",
+						"ToPort" : "443",
+						"CidrIp" : {
+							"Ref": "BaseAdminExtIP"
+						}
+					},
+					{
+						"IpProtocol" : "tcp",
+						"FromPort" : "80",
+						"ToPort" : "80",
+						"CidrIp" : {
+							"Ref": "BaseAdminExtIP"
+						}
+					}
+				],
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"sg-adminstack-alb"
+							]
+						]
+					}
+				}]
+			}
+		},
+		"SGAdminStackLC" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"GroupDescription" : "Standard Security group for AdminStack Launch Config. Permit SSH from Utility Security Group and Own Security Group, Permit 80 from Application ELB, Permit ICMP from 10.0.0.0",
+				"VpcId" : {
+					"Ref": "VPC"
+				},
+				"SecurityGroupIngress" : [
+					{
+						"IpProtocol" : "icmp",
+						"FromPort" : "-1",
+						"ToPort" : "-1",
+						"CidrIp" : "10.0.0.0/16"
+					},
+					{
+						"IpProtocol" : "tcp",
+						"FromPort" : "22",
+						"ToPort" : "22",
+						"SourceSecurityGroupId" : {
+							"Ref": "SGUtility"
+						}
+					},
+					{
+						"IpProtocol" : "tcp",
+						"FromPort" : "80",
+						"ToPort" : "80",
+						"SourceSecurityGroupId" : {
+							"Ref": "SGAdminStackALB"
+						}
+					}
+				],
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"sg-adminstack-lc"
+							]
+						]
+					}
+				}]
+			},
+			"DependsOn": [
+				"SGUtility"
+			]
+		},
+		"SGAdminStackEFS": {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"GroupDescription" : "Standard Security group for EFS. Permit 2049 from LC security group, Permit ICMP from 10.0.0.0",
+				"VpcId" : {
+					"Ref": "VPC"
+				},
+				"SecurityGroupIngress" : [
+					{
+						"IpProtocol" : "icmp",
+						"FromPort" : "-1",
+						"ToPort" : "-1",
+						"CidrIp" : "10.0.0.0/16"
+					},
+					{
+						"IpProtocol" : "tcp",
+						"FromPort" : "2049",
+						"ToPort" : "2049",
+						"SourceSecurityGroupId" : {
+							"Ref": "SGAdminStackLC"
+						}
+					}
+				],
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"sg-adminstack-efs"
+							]
+						]
+					}
+				}]
+			},
+			"DependsOn": [
+				"SGAdminStackLC"
+			]
+		},
+		"EFSAdminStack": {
+			"Type" : "AWS::EFS::FileSystem",
+			"Properties" : {
+				"Encrypted" : "true",
+				"FileSystemTags" : [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"efs-adminstack"
+							]
+						]
+					}
+				}],
+				"PerformanceMode" : "generalPurpose"
+			}
+		},
+		"EFMAZ1AdminStack" : {
+			"Type" : "AWS::EFS::MountTarget",
+			"Properties" : {
+				"FileSystemId" : {
+					"Ref": "EFSAdminStack"
+				},
+				"SecurityGroups" : [{
+					"Ref": "SGAdminStackEFS"
+				}],
+				"SubnetId" : {
+					"Ref": "VPCSubnetAZ1Admin"
+				}
+			},
+			"DependsOn": [
+				"EFSAdminStack"
+			]
+		},
+		"EFMAZ2AdminStack" : {
+			"Type" : "AWS::EFS::MountTarget",
+			"Properties" : {
+				"FileSystemId" : {
+					"Ref": "EFSAdminStack"
+				},
+				"SecurityGroups" : [{
+					"Ref": "SGAdminStackEFS"
+				}],
+				"SubnetId" : {
+					"Ref": "VPCSubnetAZ2Admin"
+				}
+			},
+			"DependsOn": [
+				"EFSAdminStack"
+			]
+		},
+		"EFMAZ3AdminStack" : {
+			"Type" : "AWS::EFS::MountTarget",
+			"Properties" : {
+				"FileSystemId" : {
+					"Ref": "EFSAdminStack"
+				},
+				"SecurityGroups" : [{
+					"Ref": "SGAdminStackEFS"
+				}],
+				"SubnetId" : {
+					"Ref": "VPCSubnetAZ3Admin"
+				}
+			},
+			"DependsOn": [
+				"EFSAdminStack"
+			]
+		},
+		"LCAdminStack": {
+			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Properties" : {
+				"BlockDeviceMappings" : [{
+					"DeviceName": "xvda",
+					"Ebs": {
+						"VolumeType": "gp2",
+						"VolumeSize": "20"
+					}
+				}],
+				"IamInstanceProfile" : {
+					"Ref": "Role"
+				},
+				"ImageId" : {
+					"Ref": "BaseAMI"
+				},
+				"InstanceType" : "t2.medium",
+				"KeyName" : {
+					"Ref": "KeyPair"
+				},
+				"SecurityGroups" : [{
+					"Ref": "SGAdminStackLC"
+				}],
+				"UserData": {
+					"Fn::Base64": {
+						"Fn::Join": ["\n",
+							[
+								"#!/bin/bash",
+								"export HOME=/root",
+								"apt-get update",
+								"apt-get upgrade -y"
+							]
+						]
+					}
+				}
+			},
+			"DependsOn" : [
+				"EFMAZ1AdminStack",
+				"EFMAZ2AdminStack",
+				"EFMAZ3AdminStack"
+			]
+		},
+		"ALBAdminStack": {
+			"Type" : "AWS::ElasticLoadBalancingV2::LoadBalancer",
+			"Properties" : {    
+				"Name" : {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"alb-adminstack"
+						]
+					]
+				},
+				"Scheme" : "internet-facing",
+				"SecurityGroups" : [{
+					"Ref": "SGAdminStackALB"
+				}],
+				"Subnets" : [
+					{"Ref": "VPCSubnetAZ1Admin"},
+					{"Ref": "VPCSubnetAZ2Admin"},
+					{"Ref": "VPCSubnetAZ3Admin"}
+				],
+				"Tags" : [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"alb-adminstack"
+							]
+						]
+					}
+				}],
+				"Type" : "application",
+				"IpAddressType" : "ipv4"
+			},
+			"DependsOn": [
+				"SGAdminStackALB",
+				"VPCIGWAttach"
+			]
+		},
+		"TGAdminStack": {
+			"Type" : "AWS::ElasticLoadBalancingV2::TargetGroup",
+			"Properties" : {
+				"HealthCheckIntervalSeconds" : "5",
+				"HealthCheckPath" : "/index.html",
+				"HealthCheckPort" : "80",
+				"HealthCheckProtocol" : "HTTP",
+				"HealthCheckTimeoutSeconds" : "3",
+				"HealthyThresholdCount" : "2",
+				"Matcher" : {
+					"HttpCode": "200"
+				},
+				"Name" : {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"tg-adminstack"
+						]
+					]
+				},
+				"Port" : "80",
+				"Protocol" : "HTTP",
+				"Tags" : [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"tg-adminstack"
+							]
+						]
+					}
+				}],
+				"UnhealthyThresholdCount" : "2",
+				"VpcId" : {
+					"Ref": "VPC"
+				}
+			}
+		},
+		"ListenerAdminStack": {
+			"Type" : "AWS::ElasticLoadBalancingV2::Listener",
+			"Properties" : {
+				"DefaultActions" : [{
+					"TargetGroupArn": {
+						"Ref": "TGAdminStack"
+					},
+					"Type": "forward"
+				}],
+				"LoadBalancerArn" : {
+					"Ref": "ALBAdminStack"
+				},
+				"Port" : "80",
+				"Protocol" : "HTTP"
+			},
+			"DependsOn": [
+				"TGAdminStack",
+				"ALBAdminStack"
+			]
+		},
+		"ASGAdminStack": {
+			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Properties" : {
+				"Tags" : [{
+					"Key": "Name",
+					"Value": {
+						"Fn::Join": ["-", [
+								{"Ref": "HACMSName"},
+								"asg-adminstack"
+							]
+						]
+					},
+					"PropagateAtLaunch": "true"
+				}],
+				"Cooldown" : "300",
+				"HealthCheckGracePeriod" : "300",
+				"HealthCheckType" : "ELB",
+				"LaunchConfigurationName" : {
+					"Ref": "LCAdminStack"
+				},
+				"MinSize" : "1",
+				"MaxSize" : "1",
+				"TargetGroupARNs": [{
+					"Ref": "TGAdminStack"
+				}],
+				"VPCZoneIdentifier" : [
+					{"Ref": "VPCSubnetAZ1Admin"},
+					{"Ref": "VPCSubnetAZ2Admin"},
+					{"Ref": "VPCSubnetAZ3Admin"}
+				]
+			},
+			"DependsOn" : [
+				"LCAdminStack",
+				"ListenerAdminStack",
+				"VPCIGWAttach"
+			]
+		},
+		"CWWebStackASCPU": {
+			"Type" : "AWS::CloudWatch::Alarm",
+			"Properties" : {
+				"ActionsEnabled" : "true",
+				"AlarmActions" : [{
+					"Ref": "SNSTopicInfraAlert"
+				}],
+				"AlarmDescription" : "Notify when CPU has breached 50% over for more than 5 minutes",
+				"AlarmName" : {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"asg-adminstack"
+						]
+					]
+				},
+				"ComparisonOperator" : "GreaterThanOrEqualToThreshold",
+				"EvaluationPeriods" : "1",
+				"MetricName" : "CPUUtilization",
+				"Namespace" : "AWS/EC2",
+				"Period" : "300",
+				"Statistic" : "Average",
+				"Threshold" : "50",
+				"Dimensions" : [{
+					"Name": "AutoScalingGroupName",
+					"Value": {
+						"Ref":"ASGAdminStack"
+					}
+				}]
+			},
+			"DependsOn":[
+				"ASGAdminStack",
+				"SNSTopicInfraAlert"
+			]
+		}
+    },
+	
+	"Outputs": {
+		"VPC": {
+			"Description": "VPC",
+			"Value": {
+				"Ref": "VPC"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"vpc"
+						]
+					]
+				}
+			}
+		},
+		"VPCSubnetAZ1Admin": {
+			"Description": "Admin Subnet in AZ 1",
+			"Value": {
+				"Ref": "VPCSubnetAZ1Admin"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"vpc-subnet-az1-admin"
+						]
+					]
+				}
+			}
+		},
+		"VPCSubnetAZ2Admin": {
+			"Description": "Admin Subnet in AZ 2",
+			"Value": {
+				"Ref": "VPCSubnetAZ2Admin"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"vpc-subnet-az2-admin"
+						]
+					]
+				}
+			}
+		},
+		"VPCSubnetAZ3Admin": {
+			"Description": "Admin Subnet in AZ 3",
+			"Value": {
+				"Ref": "VPCSubnetAZ3Admin"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Join": ["-", [
+							{"Ref": "HACMSName"},
+							"vpc-subnet-az3-admin"
+						]
+					]
+				}
+			}
+		}
+	}
+}
