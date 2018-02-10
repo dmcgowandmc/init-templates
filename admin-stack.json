@@ -2,11 +2,6 @@
 	"AWSTemplateFormatVersion": "2010-09-09",
 
 	"Parameters": {
-		"HACMSName": {
-			"Type": "String",
-			"Default": "hacms",
-			"Description": "Give a unique name to identify ha-cms. This will form the base naming standard for all other components under ha-cms and will help you identify those resources from other resources"
-		},
 		"BaseUtilityIP": {
 			"Type": "String",
 			"Default": "0.0.0.0/0",
@@ -33,6 +28,16 @@
 		"InfraAlertEmail": {
 			"Type": "String",
 			"Description": "Please provide an valid email address for infrastructure alerts. This will be used for all monitoring alerts"
+		},
+		"AdminUsername": {
+			"Type": "String",
+			"Description": "Please provide an administrator username for the admin server"
+		},
+		"AdminPassword": {
+			"Type": "String",
+			"Description": "Please provide an administrator password for the admin server",
+			"MinLength": "8",
+			"NoEcho": "true"
 		}
 	},
 	
@@ -47,7 +52,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc"
 							]
 						]
@@ -68,7 +73,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc-subnet-az1-admin-public"
 							]
 						]
@@ -89,7 +94,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc-subnet-az2-admin-public"
 							]
 						]
@@ -110,7 +115,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc-subnet-az3-admin-public"
 							]
 						]
@@ -125,7 +130,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc-igw-public"
 							]
 						]
@@ -149,7 +154,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc-routetbl-admin-public"
 							]
 						]
@@ -246,7 +251,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc-subnet-az1-admin-private"
 							]
 						]
@@ -266,7 +271,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc-subnet-az2-admin-private"
 							]
 						]
@@ -286,7 +291,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc-subnet-az3-admin-private"
 							]
 						]
@@ -314,7 +319,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc-nat-az1-private"
 							]
 						]
@@ -335,7 +340,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"vpc-routetbl-admin-private"
 							]
 						]
@@ -407,11 +412,6 @@
 			]
 		},
 		
-		
-		
-		
-		
-		
 		"LGSysWebStack": {
 			"Type" : "AWS::Logs::LogGroup",
 			"Properties" : {
@@ -440,7 +440,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"sg-utility"
 							]
 						]
@@ -453,14 +453,14 @@
 			"Properties" : {
 				"DisplayName" : {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"sns-infra-alert"
 						]
 					]
 				},
 				"TopicName" : {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"sns-infra-alert"
 						]
 					]
@@ -524,7 +524,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"ec2-utility-az1"
 							]
 						]
@@ -568,7 +568,7 @@
 				"AlarmDescription" : "Notify when CPU has breached 50% over for more than 5 minutes",
 				"AlarmName" : {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"cw-utility-az1-cpu"
 						]
 					]
@@ -629,7 +629,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"sg-adminstack-alb"
 							]
 						]
@@ -661,8 +661,8 @@
 					},
 					{
 						"IpProtocol" : "tcp",
-						"FromPort" : "80",
-						"ToPort" : "80",
+						"FromPort" : "8080",
+						"ToPort" : "8080",
 						"SourceSecurityGroupId" : {
 							"Ref": "SGAdminStackALB"
 						}
@@ -672,7 +672,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"sg-adminstack-lc"
 							]
 						]
@@ -710,7 +710,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"sg-adminstack-efs"
 							]
 						]
@@ -729,7 +729,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"efs-adminstack"
 							]
 						]
@@ -822,7 +822,10 @@
 								"#!/bin/bash",
 								"export HOME=/root",
 								"apt-get update",
-								"apt-get upgrade -y"
+								"apt-get upgrade -y",
+								"apt-get install -y ansible",
+								"apt-get install -y git",
+								"cd /root"
 							]
 						]
 					}
@@ -839,7 +842,7 @@
 			"Properties" : {    
 				"Name" : {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"alb-adminstack"
 						]
 					]
@@ -857,7 +860,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"alb-adminstack"
 							]
 						]
@@ -875,28 +878,28 @@
 			"Type" : "AWS::ElasticLoadBalancingV2::TargetGroup",
 			"Properties" : {
 				"HealthCheckIntervalSeconds" : "5",
-				"HealthCheckPath" : "/index.html",
-				"HealthCheckPort" : "80",
+				"HealthCheckPath" : "/",
+				"HealthCheckPort" : "8080",
 				"HealthCheckProtocol" : "HTTP",
 				"HealthCheckTimeoutSeconds" : "3",
 				"HealthyThresholdCount" : "2",
 				"Matcher" : {
-					"HttpCode": "200"
+					"HttpCode": "403"
 				},
 				"Name" : {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"tg-adminstack"
 						]
 					]
 				},
-				"Port" : "80",
+				"Port" : "8080",
 				"Protocol" : "HTTP",
 				"Tags" : [{
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"tg-adminstack"
 							]
 						]
@@ -935,7 +938,7 @@
 					"Key": "Name",
 					"Value": {
 						"Fn::Join": ["-", [
-								{"Ref": "HACMSName"},
+								{"Ref": "AWS::StackName"},
 								"asg-adminstack"
 							]
 						]
@@ -975,7 +978,7 @@
 				"AlarmDescription" : "Notify when CPU has breached 50% over for more than 5 minutes",
 				"AlarmName" : {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"asg-adminstack"
 						]
 					]
@@ -1010,7 +1013,7 @@
 			"Export": {
 				"Name": {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"vpc"
 						]
 					]
@@ -1025,7 +1028,7 @@
 			"Export": {
 				"Name": {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"vpc-subnet-az1-admin-public"
 						]
 					]
@@ -1040,7 +1043,7 @@
 			"Export": {
 				"Name": {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"vpc-subnet-az2-admin-public"
 						]
 					]
@@ -1055,7 +1058,7 @@
 			"Export": {
 				"Name": {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"vpc-subnet-az3-admin-public"
 						]
 					]
@@ -1070,7 +1073,7 @@
 			"Export": {
 				"Name": {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"vpc-subnet-az1-admin-private"
 						]
 					]
@@ -1085,7 +1088,7 @@
 			"Export": {
 				"Name": {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"vpc-subnet-az2-admin-private"
 						]
 					]
@@ -1100,7 +1103,7 @@
 			"Export": {
 				"Name": {
 					"Fn::Join": ["-", [
-							{"Ref": "HACMSName"},
+							{"Ref": "AWS::StackName"},
 							"vpc-subnet-az3-admin-private"
 						]
 					]
