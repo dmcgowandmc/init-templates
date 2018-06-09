@@ -430,7 +430,7 @@
 				"VPCRouteTBLAdminPrivate"
 			]
 		},
-		"SiteVPCRouteTBLWebPrivateCFGNAT": {
+		"VPCRouteTBLWebPrivateCFGNAT": {
 			"Type" : "AWS::EC2::Route",
 			"Properties" : {
 				"DestinationCidrBlock" : "0.0.0.0/0",
@@ -905,7 +905,7 @@
 										}
 									]]},
 									{"Fn::Join": ["=", [
-										"stackname", {
+										"region", {
 											"Ref": "AWS::Region"
 										}
 									]]},
@@ -920,100 +920,6 @@
 				"EFMAZ1AdminStack",
 				"EFMAZ2AdminStack",
 				"EFMAZ3AdminStack"
-			]
-		},
-		"ALBAdminStack": {
-			"Type" : "AWS::ElasticLoadBalancingV2::LoadBalancer",
-			"Properties" : {    
-				"Name" : {
-					"Fn::Join": ["-", [
-							{"Ref": "AWS::StackName"},
-							"alb-adminstack"
-						]
-					]
-				},
-				"Scheme" : "internet-facing",
-				"SecurityGroups" : [{
-					"Ref": "SGAdminStackALB"
-				}],
-				"Subnets" : [
-					{"Ref": "VPCSubnetAZ1AdminPublic"},
-					{"Ref": "VPCSubnetAZ2AdminPublic"},
-					{"Ref": "VPCSubnetAZ3AdminPublic"}
-				],
-				"Tags" : [{
-					"Key": "Name",
-					"Value": {
-						"Fn::Join": ["-", [
-								{"Ref": "AWS::StackName"},
-								"alb-adminstack"
-							]
-						]
-					}
-				}],
-				"Type" : "application",
-				"IpAddressType" : "ipv4"
-			},
-			"DependsOn": [
-				"SGAdminStackALB",
-				"VPCIGWPublicAttach"
-			]
-		},
-		"TGAdminStack": {
-			"Type" : "AWS::ElasticLoadBalancingV2::TargetGroup",
-			"Properties" : {
-				"HealthCheckIntervalSeconds" : "5",
-				"HealthCheckPath" : "/",
-				"HealthCheckPort" : "8080",
-				"HealthCheckProtocol" : "HTTP",
-				"HealthCheckTimeoutSeconds" : "3",
-				"HealthyThresholdCount" : "2",
-				"Matcher" : {
-					"HttpCode": "403"
-				},
-				"Name" : {
-					"Fn::Join": ["-", [
-							{"Ref": "AWS::StackName"},
-							"tg-adminstack"
-						]
-					]
-				},
-				"Port" : "8080",
-				"Protocol" : "HTTP",
-				"Tags" : [{
-					"Key": "Name",
-					"Value": {
-						"Fn::Join": ["-", [
-								{"Ref": "AWS::StackName"},
-								"tg-adminstack"
-							]
-						]
-					}
-				}],
-				"UnhealthyThresholdCount" : "2",
-				"VpcId" : {
-					"Ref": "VPC"
-				}
-			}
-		},
-		"ListenerAdminStack": {
-			"Type" : "AWS::ElasticLoadBalancingV2::Listener",
-			"Properties" : {
-				"DefaultActions" : [{
-					"TargetGroupArn": {
-						"Ref": "TGAdminStack"
-					},
-					"Type": "forward"
-				}],
-				"LoadBalancerArn" : {
-					"Ref": "ALBAdminStack"
-				},
-				"Port" : "80",
-				"Protocol" : "HTTP"
-			},
-			"DependsOn": [
-				"TGAdminStack",
-				"ALBAdminStack"
 			]
 		},
 		"ASGAdminStack": {
@@ -1038,9 +944,6 @@
 				},
 				"MinSize" : "1",
 				"MaxSize" : "1",
-				"TargetGroupARNs": [{
-					"Ref": "TGAdminStack"
-				}],
 				"VPCZoneIdentifier" : [
 					{"Ref": "VPCSubnetAZ1AdminPrivate"},
 					{"Ref": "VPCSubnetAZ2AdminPrivate"},
@@ -1049,7 +952,6 @@
 			},
 			"DependsOn" : [
 				"LCAdminStack",
-				"ListenerAdminStack",
 				"VPCNATAZ1Private"
 			]
 		},
