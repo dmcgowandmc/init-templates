@@ -38,16 +38,6 @@
 			"Description": "Please provide an administrator password for the admin server / aws console",
 			"MinLength": "8",
 			"NoEcho": "true"
-		},
-		"StandardUsername": {
-			"Type": "String",
-			"Description": "Please provide an standard username for the admin server / aws console"
-		},
-		"StandardPassword": {
-			"Type": "String",
-			"Description": "Please provide an standard password for the admin server / aws console",
-			"MinLength": "8",
-			"NoEcho": "true"
 		}
 	},
 	
