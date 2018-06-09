@@ -94,7 +94,7 @@
 				"AvailabilityZone": {
 					"Fn::Join": ["", [
 							{"Ref": "AWS::Region"},
-							"a"
+							"b"
 						]
 					]
 				},
@@ -121,7 +121,7 @@
 				"AvailabilityZone": {
 					"Fn::Join": ["", [
 							{"Ref": "AWS::Region"},
-							"a"
+							"c"
 						]
 					]
 				},
@@ -261,7 +261,13 @@
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"CidrBlock": "10.0.32.0/21",
-				"AvailabilityZone": "ap-southeast-2a",
+				"AvailabilityZone": {
+					"Fn::Join": ["", [
+							{"Ref": "AWS::Region"},
+							"a"
+						]
+					]
+				},
 				"VpcId": {
 					"Ref": "VPC"
 				},
@@ -281,7 +287,13 @@
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"CidrBlock": "10.0.40.0/21",
-				"AvailabilityZone": "ap-southeast-2b",
+				"AvailabilityZone": {
+					"Fn::Join": ["", [
+							{"Ref": "AWS::Region"},
+							"b"
+						]
+					]
+				},
 				"VpcId": {
 					"Ref": "VPC"
 				},
@@ -301,7 +313,13 @@
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"CidrBlock": "10.0.48.0/21",
-				"AvailabilityZone": "ap-southeast-2c",
+				"AvailabilityZone": {
+					"Fn::Join": ["", [
+							{"Ref": "AWS::Region"},
+							"c"
+						]
+					]
+				},
 				"VpcId": {
 					"Ref": "VPC"
 				},
@@ -887,11 +905,8 @@
 										}
 									]]},
 									{"Fn::Join": ["=", [
-										"elbfqdn", {
-											"Fn::GetAtt": [
-												"ALBAdminStack",
-												"DNSName"
-											]
+										"stackname", {
+											"Ref": "AWS::Region"
 										}
 									]]},
 									"\" -vvvv > runlog.log"
