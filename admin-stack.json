@@ -64,7 +64,13 @@
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"CidrBlock": "10.0.8.0/21",
-				"AvailabilityZone": "ap-southeast-2a",
+				"AvailabilityZone": {
+					"Fn::Join": ["", [
+							{"Ref": "AWS::Region"},
+							"a"
+						]
+					]
+				},
 				"MapPublicIpOnLaunch": "true",
 				"VpcId": {
 					"Ref": "VPC"
@@ -85,7 +91,13 @@
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"CidrBlock": "10.0.16.0/21",
-				"AvailabilityZone": "ap-southeast-2b",
+				"AvailabilityZone": {
+					"Fn::Join": ["", [
+							{"Ref": "AWS::Region"},
+							"a"
+						]
+					]
+				},
 				"MapPublicIpOnLaunch": "true",
 				"VpcId": {
 					"Ref": "VPC"
@@ -106,7 +118,13 @@
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"CidrBlock": "10.0.24.0/21",
-				"AvailabilityZone": "ap-southeast-2c",
+				"AvailabilityZone": {
+					"Fn::Join": ["", [
+							{"Ref": "AWS::Region"},
+							"a"
+						]
+					]
+				},
 				"MapPublicIpOnLaunch": "true",
 				"VpcId": {
 					"Ref": "VPC"
