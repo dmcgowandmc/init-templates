@@ -20,4 +20,6 @@ For the stack name, recommended not to have - as it's used as a separator in the
 
 Please allow up to 20 minutes for the stack to complete. Note that even when it says the stack is finished, the stack needs to under go an update after.
 
-One stack has finished updating, go to the load balancer section in EC2 and enter the default load balancer DNS into your browser to access the admin server
+One stack has finished updating, go to the load balancer section in EC2 and select the default load balancer DNS into your browser. Make sure it's https. If it times out, Jenkins may still be initializing.
+
+You will be prompted for a username and password, use the ones provided into the template to log in. If it prompts you for a FQDN, leave what ever is provided by default
