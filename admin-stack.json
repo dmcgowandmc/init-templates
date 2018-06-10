@@ -488,7 +488,7 @@
 		"SGAdminStackALB" : {
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
-				"GroupDescription" : "Standard Security group for AdminStack Application Load Balancer. Permit 443 and 80 from 0.0.0.0, Permit ICMP from 10.0.0.0",
+				"GroupDescription" : "Standard Security group for AdminStack Application Load Balancer. Permit 443 and 80 from specified range, Permit ICMP from 10.0.0.0",
 				"VpcId" : {
 					"Ref": "VPC"
 				},
@@ -531,7 +531,7 @@
 		"SGAdminStackLC" : {
 			"Type" : "AWS::EC2::SecurityGroup",
 			"Properties" : {
-				"GroupDescription" : "Standard Security group for AdminStack Launch Config. Permit SSH from Utility Security Group and Own Security Group, Permit 80 from Application ELB, Permit ICMP from 10.0.0.0",
+				"GroupDescription" : "Standard Security group for AdminStack Launch Config. Permit SSH from Utility Security Group and Own Security Group, Permit 8080 from Application ELB, Permit ICMP from 10.0.0.0",
 				"VpcId" : {
 					"Ref": "VPC"
 				},
