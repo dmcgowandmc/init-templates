@@ -900,6 +900,21 @@
 										}
 									]]},
 									{"Fn::Join": ["=", [
+										"utilityip", {
+											"Ref": "BaseUtilityIP"
+										}
+									]]},
+									{"Fn::Join": ["=", [
+										"adminextip", {
+											"Ref": "BaseAdminExtIP"
+										}
+									]]},
+									{"Fn::Join": ["=", [
+										"baseami", {
+											"Ref": "BaseAMI"
+										}
+									]]},
+									{"Fn::Join": ["=", [
 										"stackname", {
 											"Ref": "AWS::StackName"
 										}
